@@ -1,11 +1,10 @@
 # Memória de decisões
 
-> Registro inicial. Decisões futuras devem ser adicionadas com evidência e resultado.
+> Registro de decisões com evidência. O agente deve aprender com decisões aprovadas, mas nunca transformar uma decisão histórica em autorização permanente para ações destrutivas.
 
 ## 2026-08-19 — organização inicial do GitHub
 
-**Decisão:** tratar como projetos oficiais os seguintes repositórios:
-
+**Projetos oficiais:**
 - captaPro
 - CaptaPro-Analytics-PWA
 - Consultoria-e-relat-rio
@@ -16,11 +15,12 @@
 - Arena-sx
 
 **Candidatos inicialmente identificados para exclusão/revisão:**
-
 - ManagerPro-gest-o-
 - CaptaPro-1.0
 - captaProlocal
 - Relat-rios-performance-brindes
 - Drak-ai
 
-**Observação:** esta lista é uma decisão histórica do usuário e deve ser revalidada por auditoria atual antes de qualquer exclusão.
+**Regra aprendida:** antes de excluir qualquer candidato, comparar código, dados e funcionalidades com os projetos oficiais. Exclusão automática é proibida.
+
+**Regra de autonomia:** o agente pode auditar e preparar mudanças; ações destrutivas ou de alto risco exigem aprovação explícita.
