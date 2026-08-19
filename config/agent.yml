@@ -1,0 +1,44 @@
+agent:
+  name: RBS Git Agent
+  version: 0.1.0
+  mode: supervised
+  language: pt-BR
+
+workflow:
+  audit_before_action: true
+  plan_before_write: true
+  test_after_change: true
+  record_decision: true
+
+risk_levels:
+  low:
+    - inspect repository
+    - inspect files
+    - generate report
+    - create documentation
+    - create issue
+  medium:
+    - modify source code
+    - create branch
+    - create pull request
+    - refactor code
+  critical:
+    - delete repository
+    - delete production data
+    - change secrets
+    - destructive database migration
+    - direct production deployment
+
+critical_actions:
+  require_explicit_confirmation: true
+  never_infer_confirmation: true
+
+protected_repositories:
+  - captaPro
+  - CaptaPro-Analytics-PWA
+  - Consultoria-e-relat-rio
+  - RASULTADOS-E-PERFOMANCE
+  - Gamificacao300
+  - Campos-Pass
+  - Mundo-da-Sarah
+  - Arena-sx
