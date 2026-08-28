@@ -1,0 +1,17 @@
+{
+  "name": "RBS Git Agent — Daemon",
+  "short_name": "RBS Agent",
+  "description": "Console do RBS Git Agent para auditoria e supervisão do ecossistema.",
+  "start_url": "./agent.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05070b",
+  "theme_color": "#05070b",
+  "lang": "pt-BR",
+  "icons": [
+    {"src":"./icon-192.svg","sizes":"192x192","type":"image/svg+xml","purpose":"any"},
+    {"src":"./icon-512.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any"},
+    {"src":"./icon-512-maskable.svg","sizes":"512x512","type":"image/svg+xml","purpose":"maskable"}
+  ]
+}
