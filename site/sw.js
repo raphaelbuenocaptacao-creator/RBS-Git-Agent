@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rbs-git-agent-v3-safe-shell';
+const CACHE_NAME = 'rbs-git-agent-v4-safe-shell';
 const STATIC_ASSETS = new Set([
   './agent.html',
   './manifest.webmanifest',
@@ -9,7 +9,8 @@ const STATIC_ASSETS = new Set([
 const PRIVATE_PATH_RE = /\/(api|auth|login|logout|admin|session|sessions|token|tokens|account|profile|me)(\/|$)/i;
 const SENSITIVE_QUERY_KEYS = new Set([
   'token','access_token','refresh_token','password','passwd','pwd','secret',
-  'session','session_id','auth','authorization','api_key','apikey','key','code'
+  'session','session_id','auth','authorization','api_key','apikey','key','code',
+  'credential','credentials'
 ]);
 
 function hasSensitiveQuery(url){
