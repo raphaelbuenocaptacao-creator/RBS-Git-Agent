@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rbs-git-agent-v4-safe-shell';
+const CACHE_NAME = 'rbs-git-agent-v5-safe-shell';
 const STATIC_ASSETS = new Set([
   './agent.html',
   './manifest.webmanifest',
@@ -38,8 +38,33 @@ function shellKey(url){
   return null;
 }
 
+function responseIsSafeToCache(response){
+  if(!response || !response.ok || response.type !== 'basic') return false;
+  const cacheControl = (response.headers.get('cache-control') || '').toLowerCase();
+  if(cacheControl.includes('no-store') || cacheControl.includes('private')) return false;
+  if(response.headers.has('set-cookie')) return false;
+  return true;
+}
+
+async function safeFetchAndCache(cache, key){
+  const request = new Request(key, {
+    method: 'GET',
+    credentials: 'omit',
+    cache: 'no-store',
+    redirect: 'follow'
+  });
+  const response = await fetch(request);
+  if(responseIsSafeToCache(response)) await cache.put(key, response.clone());
+  return response;
+}
+
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll([...STATIC_ASSETS])));
+  event.waitUntil((async()=>{
+    const cache = await caches.open(CACHE_NAME);
+    await Promise.all([...STATIC_ASSETS].map(async key => {
+      try { await safeFetchAndCache(cache, key); } catch (_) { /* offline install: skip asset */ }
+    }));
+  })());
   self.skipWaiting();
 });
 
@@ -62,10 +87,10 @@ self.addEventListener('fetch', event => {
   const key = shellKey(url);
   if(!key || !STATIC_ASSETS.has(key)) return;
 
-  event.respondWith(caches.match(key).then(hit => hit || fetch(request).then(response => {
-    if(!response || !response.ok || response.type !== 'basic') return response;
-    const copy = response.clone();
-    caches.open(CACHE_NAME).then(cache => cache.put(key, copy));
-    return response;
-  })));
+  event.respondWith(caches.match(key).then(async hit => {
+    if(hit) return hit;
+    const cache = await caches.open(CACHE_NAME);
+    try { return await safeFetchAndCache(cache, key); }
+    catch (_) { return Response.error(); }
+  }));
 });
