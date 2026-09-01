@@ -1,4 +1,5 @@
 {
+  "id": "./agent.html",
   "name": "RBS Git Agent — Daemon",
   "short_name": "RBS Agent",
   "description": "Console do RBS Git Agent para auditoria e supervisão do ecossistema.",
