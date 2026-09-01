@@ -1,4 +1,5 @@
-const CACHE_NAME = 'rbs-git-agent-v5-safe-shell';
+const CACHE_PREFIX = 'rbs-git-agent-';
+const CACHE_NAME = `${CACHE_PREFIX}v6-safe-shell`;
 const STATIC_ASSETS = new Set([
   './agent.html',
   './manifest.webmanifest',
@@ -39,7 +40,7 @@ function shellKey(url){
 }
 
 function responseIsSafeToCache(response){
-  if(!response || !response.ok || response.type !== 'basic') return false;
+  if(!response || !response.ok || response.type !== 'basic' || response.status === 206) return false;
   const cacheControl = (response.headers.get('cache-control') || '').toLowerCase();
   if(cacheControl.includes('no-store') || cacheControl.includes('private')) return false;
   if(response.headers.has('set-cookie')) return false;
@@ -69,8 +70,13 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil((async()=>{
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', event => {
@@ -80,7 +86,14 @@ self.addEventListener('fetch', event => {
 
   if(request.mode === 'navigate'){
     const networkRequest = new Request(request, { cache: 'no-store' });
-    event.respondWith(fetch(networkRequest).catch(() => caches.match('./agent.html')));
+    event.respondWith((async()=>{
+      try {
+        const response = await fetch(networkRequest);
+        return response;
+      } catch (_) {
+        return (await caches.match('./agent.html')) || Response.error();
+      }
+    })());
     return;
   }
 
