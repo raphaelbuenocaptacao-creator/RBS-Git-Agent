@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'rbs-git-agent-';
-const CACHE_NAME = `${CACHE_PREFIX}v6-safe-shell`;
+const CACHE_NAME = `${CACHE_PREFIX}v7-safe-shell`;
 const STATIC_ASSETS = new Set([
   './agent.html',
   './manifest.webmanifest',
@@ -23,7 +23,7 @@ function hasSensitiveQuery(url){
 
 function isSensitive(request, url){
   if(request.method !== 'GET') return true;
-  if(request.headers.has('authorization') || request.headers.has('cookie')) return true;
+  if(request.headers.has('authorization') || request.headers.has('cookie') || request.headers.has('range')) return true;
   if(PRIVATE_PATH_RE.test(url.pathname) || hasSensitiveQuery(url)) return true;
   return false;
 }
@@ -43,7 +43,7 @@ function responseIsSafeToCache(response){
   if(!response || !response.ok || response.type !== 'basic' || response.status === 206) return false;
   const cacheControl = (response.headers.get('cache-control') || '').toLowerCase();
   if(cacheControl.includes('no-store') || cacheControl.includes('private')) return false;
-  if(response.headers.has('set-cookie')) return false;
+  if(response.headers.has('set-cookie') || response.headers.has('content-range')) return false;
   return true;
 }
 
