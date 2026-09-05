@@ -1,11 +1,11 @@
 const CACHE_PREFIX = 'rbs-git-agent-';
-const CACHE_NAME = `${CACHE_PREFIX}v7-safe-shell`;
+const CACHE_NAME = `${CACHE_PREFIX}v8-raster-safe-shell`;
 const STATIC_ASSETS = new Set([
   './agent.html',
   './manifest.webmanifest',
-  './icon-192.svg',
-  './icon-512.svg',
-  './icon-512-maskable.svg'
+  './icon-192.png',
+  './icon-512.png',
+  './icon-512-maskable.png'
 ]);
 const PRIVATE_PATH_RE = /\/(api|auth|login|logout|admin|session|sessions|token|tokens|account|profile|me)(\/|$)/i;
 const SENSITIVE_QUERY_KEYS = new Set([
@@ -23,7 +23,7 @@ function hasSensitiveQuery(url){
 
 function isSensitive(request, url){
   if(request.method !== 'GET') return true;
-  if(request.headers.has('authorization') || request.headers.has('cookie') || request.headers.has('range')) return true;
+  if(request.headers.has('authorization') || request.headers.has('cookie') || request.headers.has('range') || request.headers.has('if-range')) return true;
   if(PRIVATE_PATH_RE.test(url.pathname) || hasSensitiveQuery(url)) return true;
   return false;
 }
@@ -33,14 +33,14 @@ function shellKey(url){
   const name = url.pathname.split('/').pop();
   if(name === 'agent.html') return './agent.html';
   if(name === 'manifest.webmanifest') return './manifest.webmanifest';
-  if(name === 'icon-192.svg') return './icon-192.svg';
-  if(name === 'icon-512.svg') return './icon-512.svg';
-  if(name === 'icon-512-maskable.svg') return './icon-512-maskable.svg';
+  if(name === 'icon-192.png') return './icon-192.png';
+  if(name === 'icon-512.png') return './icon-512.png';
+  if(name === 'icon-512-maskable.png') return './icon-512-maskable.png';
   return null;
 }
 
 function responseIsSafeToCache(response){
-  if(!response || !response.ok || response.type !== 'basic' || response.status === 206) return false;
+  if(!response || !response.ok || response.type !== 'basic' || response.status === 206 || response.redirected) return false;
   const cacheControl = (response.headers.get('cache-control') || '').toLowerCase();
   if(cacheControl.includes('no-store') || cacheControl.includes('private')) return false;
   if(response.headers.has('set-cookie') || response.headers.has('content-range')) return false;
@@ -52,7 +52,7 @@ async function safeFetchAndCache(cache, key){
     method: 'GET',
     credentials: 'omit',
     cache: 'no-store',
-    redirect: 'follow'
+    redirect: 'error'
   });
   const response = await fetch(request);
   if(responseIsSafeToCache(response)) await cache.put(key, response.clone());
