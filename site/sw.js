@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'rbs-git-agent-';
-const CACHE_NAME = `${CACHE_PREFIX}v8-raster-safe-shell`;
+const CACHE_NAME = `${CACHE_PREFIX}v9-private-vary-safe-shell`;
 const STATIC_ASSETS = new Set([
   './agent.html',
   './manifest.webmanifest',
@@ -39,11 +39,19 @@ function shellKey(url){
   return null;
 }
 
+function variesByPrivateState(response){
+  const vary = (response.headers.get('vary') || '').toLowerCase();
+  return vary.split(',').some(value => {
+    const key = value.trim();
+    return key === 'cookie' || key === 'authorization';
+  });
+}
+
 function responseIsSafeToCache(response){
   if(!response || !response.ok || response.type !== 'basic' || response.status === 206 || response.redirected) return false;
   const cacheControl = (response.headers.get('cache-control') || '').toLowerCase();
   if(cacheControl.includes('no-store') || cacheControl.includes('private')) return false;
-  if(response.headers.has('set-cookie') || response.headers.has('content-range')) return false;
+  if(response.headers.has('set-cookie') || response.headers.has('content-range') || variesByPrivateState(response)) return false;
   return true;
 }
 
@@ -65,8 +73,8 @@ self.addEventListener('install', event => {
     await Promise.all([...STATIC_ASSETS].map(async key => {
       try { await safeFetchAndCache(cache, key); } catch (_) { /* offline install: skip asset */ }
     }));
+    await self.skipWaiting();
   })());
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
@@ -85,11 +93,10 @@ self.addEventListener('fetch', event => {
   if(url.origin !== self.location.origin || isSensitive(request, url)) return;
 
   if(request.mode === 'navigate'){
-    const networkRequest = new Request(request, { cache: 'no-store' });
+    const networkRequest = new Request(request, { cache: 'no-store', redirect: 'error' });
     event.respondWith((async()=>{
       try {
-        const response = await fetch(networkRequest);
-        return response;
+        return await fetch(networkRequest);
       } catch (_) {
         return (await caches.match('./agent.html')) || Response.error();
       }
