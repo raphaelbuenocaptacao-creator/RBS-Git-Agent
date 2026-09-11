@@ -1,0 +1,60 @@
+name: RBS Git Agent PWA Audit
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pwa-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required PWA files
+        run: |
+          test -f site/agent.html
+          test -f site/manifest.webmanifest
+          test -f site/sw.js
+          test -f site/icon-192.png
+          test -f site/icon-512.png
+          test -f site/icon-512-maskable.png
+      - name: Validate manifest
+        run: |
+          python - <<'PY'
+          import json
+          m=json.load(open('site/manifest.webmanifest', encoding='utf-8'))
+          assert m.get('name') and m.get('short_name')
+          assert m.get('display') == 'standalone'
+          assert m.get('start_url') and m.get('scope')
+          icons=m.get('icons', [])
+          assert any(i.get('sizes')=='192x192' and i.get('type')=='image/png' for i in icons)
+          assert any(i.get('sizes')=='512x512' and i.get('type')=='image/png' for i in icons)
+          assert any(i.get('sizes')=='512x512' and 'maskable' in i.get('purpose','') for i in icons)
+          PY
+      - name: Validate service worker safety
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          sw=Path('site/sw.js').read_text(encoding='utf-8').lower()
+          html=Path('site/agent.html').read_text(encoding='utf-8').lower()
+          required=[
+            "authorization", "cookie", "range", "if-range", "content-range",
+            "no-store", "private", "set-cookie", "status === 206",
+            "key === 'range'", "key === 'if-range'", "cache_prefix"
+          ]
+          missing=[x for x in required if x not in sw]
+          assert not missing, f'missing SW safety guards: {missing}'
+          assert 'serviceworker.register' in html
+          assert "updateviacache:'none'" in html.replace(' ', '')
+          assert 'beforeinstallprompt' in html
+          PY
+      - name: Validate no broad cache deletion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          sw=Path('site/sw.js').read_text(encoding='utf-8')
+          assert 'key.startsWith(CACHE_PREFIX)' in sw
+          PY
