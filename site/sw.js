@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'rbs-git-agent-';
-const CACHE_NAME = `${CACHE_PREFIX}v11-private-vary-range-safe-shell`;
+const CACHE_NAME = `${CACHE_PREFIX}v12-private-vary-range-safe-shell`;
 const STATIC_ASSETS = new Set([
   './agent.html',
   './manifest.webmanifest',
@@ -43,7 +43,7 @@ function variesByPrivateState(response){
   const vary = (response.headers.get('vary') || '').toLowerCase();
   return vary.split(',').some(value => {
     const key = value.trim();
-    return key === '*' || key === 'cookie' || key === 'authorization' || key === 'range';
+    return key === '*' || key === 'cookie' || key === 'authorization' || key === 'range' || key === 'if-range';
   });
 }
 
