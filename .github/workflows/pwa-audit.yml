@@ -51,6 +51,18 @@ jobs:
           assert "updateviacache:'none'" in html.replace(' ', '')
           assert 'beforeinstallprompt' in html
           PY
+      - name: Validate service worker version alignment
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          sw=Path('site/sw.js').read_text(encoding='utf-8')
+          html=Path('site/agent.html').read_text(encoding='utf-8')
+          m=re.search(r"CACHE_NAME\s*=\s*`\$\{CACHE_PREFIX\}([^`]+)`", sw)
+          assert m, 'CACHE_NAME version not found'
+          version=m.group(1)
+          assert f"./sw.js?v={version}" in html, f'registration is not aligned with {version}'
+          PY
       - name: Validate no broad cache deletion
         run: |
           python - <<'PY'
