@@ -3,6 +3,8 @@ name: RBS Git Agent PWA Audit
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -62,6 +64,18 @@ jobs:
           assert m, 'CACHE_NAME version not found'
           version=m.group(1)
           assert f"./sw.js?v={version}" in html, f'registration is not aligned with {version}'
+          PY
+      - name: Validate service worker refresh and handoff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('site/agent.html').read_text(encoding='utf-8')
+          compact=''.join(html.split()).lower()
+          assert 'visibilitychange' in compact, 'missing refresh when app returns to foreground'
+          assert "visibilitystate==='visible'" in compact or 'visibilitystate==="visible"' in compact, 'foreground refresh must only run when visible'
+          assert 'registration.update()' in compact or '.update()' in compact, 'missing service worker update check'
+          assert 'controllerchange' in compact, 'missing service worker controller handoff handling'
+          assert 'location.reload()' in compact or 'location.reload(' in compact, 'controller handoff must refresh the running shell'
           PY
       - name: Validate no broad cache deletion
         run: |
